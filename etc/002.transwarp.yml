@@ -26,3 +26,9 @@ link:
 #    - binding:          transport
 #      options:
 #        outQueueSize:   32
+
+dialers:
+  - binding:            transport
+#    options:
+#      retransmission:   false
+#      mtu:              1024
