@@ -1,3 +1,129 @@
+# Release 0.13.9
+## Theme
+ * Adds paging information to cli commands
+ 
+ Example
+ 
+ ```shell script
+$ ec list api-sessions "true sort by token skip 2 limit 3" 
+id: 37dd1463-e4e7-40de-9a63-f75486430361    token: 0b392a2f-47f8-4561-af63-93807ce70d93    identity: Default Admin
+id: 6fb5b488-debf-4212-9670-f250e31b3d4f    token: 15ae6b00-f123-458c-a121-5cf91983a2c2    identity: Default Admin
+id: 8aa4a074-b2c7-4d55-9f56-17199ab6ac11    token: 1b9418d8-b9a7-4e39-a876-7a9588f5e7ed    identity: Default Admin
+results: 3-5 of 23
+```
+
+# Release 0.13.8
+## Theme
+ * Fixes Ziti Edge Router ignoring connect options for SDK listener
+
+
+# Release 0.13.7
+## Theme
+Ziti 0.13.7 includes the following:
+
+  * Improvements to sdk availability when hosting services
+  * Various bug fixes to related to terminators and transit routers
+  
+## SDK Resilience
+The golang sdk now has a new listen method on context, which takes listen options.
+
+```go
+type Context interface {
+	...
+	ListenWithOptions(serviceName string, options *edge.ListenOptions) (net.Listener, error)
+    ...
+}
+
+type ListenOptions struct {
+	Cost           uint16
+	ConnectTimeout time.Duration
+	MaxConnections int
+}
+```  
+
+The SDK now supports the following:
+
+  * Configuring connect timeout
+  * Allow establishing new session, if existing session goes away
+  * Allow establishing new API session, existing API session goes away
+  * If client doesn't have access to service, it should stop listening and return an error
+  * If client can't establish or re-establish API session, it should stop listening and return error
+  
+If paired with a ziti controller/routers which support terminator strategies for HA/HS, the following features are also supported:
+
+  * Handle listen to multiple edge routers.
+  * Allow configuring max number of connections to edge routers
+
+# Release 0.13.6
+## Theme
+
+  * Fixes the `-n` flag being ignored for `ziti-enroll`
+
+# Release 0.13.5
+## Theme
+
+  * Adds ability to verify 3rd party CAs via the CLI in the Ziti Edge API
+
+## Ziti CLI Verify CA Support
+
+Previous to this version the CLI was only capable of creating, editing,
+and deleting CAs. For a CA to be useful it must be verified. If not,
+it cannot be used for enrollment or authentication. The verification
+process requires HTTP requests and the creation of a signed verification
+certificate. The Ziti CLI can now perform all or part of this process.
+
+
+### Example: No Existing Verification Cert
+This example is useful for situations where access to the CA's
+private key is possible. This command will fetch the CA's verification
+token from the Ziti Edge API, create a short lived (5 min) verification
+certificate, and use it to verify the CA.
+
+This example includes the `--password` flag which is optional. If the
+`--password` flag is not included and the private key is encrypted
+the user will be prompted for the password.
+
+- `myCa` is the name or id of a CA that has already been created.
+- `ca.cert.pem` the CA's public x509 PEM formatted certificate
+- `ca.key.pem` the CA's private x509 PEM formatted key
+
+```
+$ ziti edge controller verify ca myCa --cacert ca.cert.pem --cakey ca.key.pem --password 1234
+```
+
+###  Example: Existing Verification Certificate
+This example is useful for situations where access to the signing CA's
+private key is not possible (off-site, coldstore, etc.). This example
+assumes that the appropriate `openssl` commands have been run to
+generate the verification script.
+
+- `myCa` is the name or id of a CA that has already been created.
+- `verificationCert.pem` is a PEM encoded x509 certificate that has the common name set to the verification token of `myCa`
+```
+$ ziti edge controller verify ca myCa --cert verificationCert.pem
+```
+
+### Command help:
+```
+$ ziti edge controller verify ca --help
+
+Usage:
+  ziti edge controller verify ca <name> ( --cert <pemCertFile> | --cacert
+  <signingCaCert> --cakey <signingCaKey> [--password <caKeyPassword>]) [flags]
+
+Flags:
+  -a, --cacert string     The path to the CA cert that should be used togenerate and sign a verification cert
+  -k, --cakey string      The path to the CA key that should be used to generate and sign a verification cert
+  -c, --cert string       The path to a cert with the CN set as the verification token and signed by the target CA
+  -h, --help              help for ca
+  -j, --output-json       Output the full JSON response from the Ziti Edge Controller
+  -p, --password string   The password for the CA key if necessary
+```
+
+# Release 0.13.4
+## Theme
+ * Updates `quickstart` scripts
+
 # Release 0.13.3
 ## Theme
 Ziti 0.13.3 includes the following:
