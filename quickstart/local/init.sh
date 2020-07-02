@@ -91,9 +91,17 @@ fi
 . ${curdir}/start-ziti.sh
 . ${curdir}/test-ziti.sh
 
+for f in $(env)
+do
+  if [[ $f = ZITI_* ]]
+  then
+    echo "export $f" >> ${ZITI_HOME}/make-env.sh
+  fi
+done
+
 echo "staring a new bash shell to retain all environment variables without polluting the initial shell"
 bash --rcfile <(cat << HERE
-. ~/.bashrc 
+. ~/.bashrc
 . ~/.bash_aliases
 export PS1="ZITI IS RUNNING ${network_name}: "
 
@@ -105,7 +113,7 @@ alias zlogin='ziti edge controller login "${ZITI_EDGE_API_HOSTNAME}" -u "${ZITI_
 alias psz='ps -ef | grep ziti'
 
 echo "generating env file"
-for f in $(env); do if [[ $f = ZITI_* ]]; then echo "export $f" >> make-env.sh ; fi; done
-
+. ${ZITI_HOME}/make-env.sh
+echo "sourced environment file at ${ZITI_HOME}/make-env.sh"
 HERE
 )
