@@ -91,6 +91,8 @@ fi
 . ${curdir}/start-ziti.sh
 . ${curdir}/test-ziti.sh
 
+echo "export PATH=\$PATH:$1" > ${ZITI_HOME}/make-env.sh
+
 for f in $(env)
 do
   if [[ $f = ZITI_* ]]
