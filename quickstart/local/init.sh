@@ -1,5 +1,5 @@
 #!/bin/bash
-commands_to_test=(ziti ziti-router ziti-controller bash tee jq curl cat dos2unix)
+commands_to_test=(ziti ziti-router ziti-controller bash tee jq curl cat )
 
 if [[ "" == "$1" ]]
 then
@@ -44,9 +44,13 @@ else
     export network_name="$2"
 fi
 echo "Network name set to: ${network_name}"
+export ZITI_HOME=~/.ziti/quickstart/${network_name}
 
+echo "generating file to source"
+${curdir}/env.sh
 
-. ${curdir}/env.sh
+echo "sourcing file: ${ZITI_HOME}/env"
+. ${ZITI_HOME}/env
 
 echo "This script relies on the following hosts being active on your network and since this is a local"
 echo "installation it expects them all to be at localhost/127.0.0.1. Please make sure the following"
@@ -115,7 +119,7 @@ alias zlogin='ziti edge controller login "${ZITI_EDGE_API_HOSTNAME}" -u "${ZITI_
 alias psz='ps -ef | grep ziti'
 
 echo "generating env file"
-. ${ZITI_HOME}/make-env.sh
-echo "sourced environment file at ${ZITI_HOME}/make-env.sh"
+. ${ZITI_HOME}/env
+echo "sourced environment file at . ${ZITI_HOME}/env"
 HERE
 )
