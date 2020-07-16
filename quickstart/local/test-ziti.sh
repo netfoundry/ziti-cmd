@@ -32,8 +32,6 @@ ziti edge controller create identity device "test_identity" -o "${ZITI_HOME}/tes
 ziti edge controller delete service-policy dial-all
 ziti edge controller create service-policy dial-all Dial --service-roles '#all' --identity-roles '#all'
 
-#ziti-enroller --jwt "${ZITI_HOME}/test_identity.jwt" -o "${ZITI_HOME}/test_identity".json
+ziti-enroller --jwt "${ZITI_HOME}/test_identity.jwt" -o "${ZITI_HOME}/test_identity.json"
 
 #ziti-tunnel proxy netcatsvc:8145 -i "${ZITI_HOME}/test_identity".json > "${ZITI_HOME}/ziti-test_identity.log" 2>&1 &
-cp "${ZITI_HOME}/test_identity.jwt" /mnt/v/temp/ziti-windows-tunneler/_new_id.jwt
-
