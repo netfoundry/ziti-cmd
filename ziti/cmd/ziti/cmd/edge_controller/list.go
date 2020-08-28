@@ -137,7 +137,7 @@ func (p *paging) output(o *commonOptions) {
 	} else {
 		first := p.offset + 1
 		last := p.offset + p.limit
-		if last > p.count {
+		if last > p.count || last < 0 { // if p.limit is maxint, last will rollover and be negative
 			last = p.count
 		}
 		_, _ = fmt.Fprintf(o.Out, "results: %v-%v of %v\n", first, last, p.count)
@@ -179,8 +179,7 @@ func newListCmdForEntityType(entityType string, command listCommandRunner, optio
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -208,12 +207,11 @@ func newListServicesCmd(options *commonOptions) *cobra.Command {
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
 	cmd.Flags().StringVar(&asIdentity, "as-identity", "", "Allow admins to see services as they would be seen by a different identity")
 	cmd.Flags().StringSliceVar(&configTypes, "config-types", nil, "Override which config types to view on services")
 	cmd.Flags().StringSliceVar(&roleFilters, "role-filters", nil, "Allow filtering by roles")
 	cmd.Flags().StringVar(&roleSemantic, "role-semantic", "", "Specify which roles semantic to use ")
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -239,10 +237,9 @@ func newListEdgeRoutersCmd(options *commonOptions) *cobra.Command {
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
 	cmd.Flags().StringSliceVar(&roleFilters, "role-filters", nil, "Allow filtering by roles")
 	cmd.Flags().StringVar(&roleSemantic, "role-semantic", "", "Specify which roles semantic to use ")
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -268,10 +265,9 @@ func newListIdentitiesCmd(options *commonOptions) *cobra.Command {
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
 	cmd.Flags().StringSliceVar(&roleFilters, "role-filters", nil, "Allow filtering by roles")
 	cmd.Flags().StringVar(&roleSemantic, "role-semantic", "", "Specify which roles semantic to use ")
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -295,8 +291,7 @@ func newSubListCmdForEntityType(entityType string, subType string, outputF outpu
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -398,8 +393,9 @@ func outputEdgeRouters(o *commonOptions, children []*gabs.Container, pagingInfo 
 	for _, entity := range children {
 		id, _ := entity.Path("id").Data().(string)
 		name, _ := entity.Path("name").Data().(string)
+		isOnline, _ := entity.Path("isOnline").Data().(bool)
 		roleAttributes := entity.Path("roleAttributes").String()
-		if _, err := fmt.Fprintf(o.Out, "id: %v    name: %v    role attributes: %v\n", id, name, roleAttributes); err != nil {
+		if _, err := fmt.Fprintf(o.Out, "id: %v    name: %v    isOnline: %v    role attributes: %v\n", id, name, isOnline, roleAttributes); err != nil {
 			return err
 		}
 	}
@@ -512,9 +508,11 @@ func outputServices(o *commonOptions, children []*gabs.Container, pagingInfo *pa
 	for _, entity := range children {
 		id, _ := entity.Path("id").Data().(string)
 		name, _ := entity.Path("name").Data().(string)
+		encryptionRequired, _ := entity.Path("encryptionRequired").Data().(bool)
 		terminatorStrategy, _ := entity.Path("terminatorStrategy").Data().(string)
 		roleAttributes := entity.Path("roleAttributes").String()
-		_, err := fmt.Fprintf(o.Out, "id: %v    name: %v    terminator strategy: %v    role attributes: %v\n", id, name, terminatorStrategy, roleAttributes)
+
+		_, err := fmt.Fprintf(o.Out, "id: %v    name: %v    encryption required: %v    terminator strategy: %v    role attributes: %v\n", id, name, encryptionRequired , terminatorStrategy, roleAttributes)
 		if err != nil {
 			return err
 		}
@@ -613,7 +611,12 @@ func outputServicePolicies(o *commonOptions, children []*gabs.Container, pagingI
 }
 
 func mapRoleIdsToNames(c *gabs.Container, path string, entityType string) ([]string, error) {
-	values := c.Path(path).Data().([]interface{})
+	jsonValues := c.Path(path).Data()
+	if jsonValues == nil {
+		return nil, nil
+	}
+
+	values := jsonValues.([]interface{})
 
 	var result []string
 	for _, val := range values {

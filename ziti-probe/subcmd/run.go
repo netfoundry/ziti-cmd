@@ -5,7 +5,6 @@ import (
 	influxdb "github.com/influxdata/influxdb1-client"
 	"github.com/michaelquigley/pfxlog"
 	"github.com/openziti/foundation/metrics"
-	"github.com/openziti/foundation/metrics/metrics_pb"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/openziti/sdk-golang/ziti/config"
 	"github.com/openziti/sdk-golang/ziti/edge"
@@ -67,16 +66,12 @@ var theProbe = &probe{
 	closer: make(chan interface{}),
 }
 
-func (p *probe) AcceptMetrics(message *metrics_pb.MetricsMessage) {
-	p.latest.Store(message)
-}
-
 func (p *probe) sendMetrics() {
 	for {
 		select {
 		case <-time.After(time.Duration(p.cfg.interval) * time.Second):
-			message, ok := p.latest.Load().(*metrics_pb.MetricsMessage)
-			if !ok {
+			message := p.ctx.Metrics().Poll()
+			if message == nil {
 				continue
 			}
 			bp, err := metrics.AsBatch(message)
@@ -93,7 +88,7 @@ func (p *probe) sendMetrics() {
 	}
 }
 
-func (p *probe) run(cmd *cobra.Command, args []string) {
+func (p *probe) run(_ *cobra.Command, args []string) {
 
 	var err error
 	if len(args) == 0 {
@@ -131,8 +126,6 @@ func (p *probe) run(cmd *cobra.Command, args []string) {
 		log.WithError(err).Fatal("failed to get server info")
 	}
 	log.Info("connected to influx version = ", res)
-
-	p.ctx.Metrics().EventController().AddHandler(p)
 
 	go p.sendMetrics()
 
@@ -204,12 +197,12 @@ func (p *probe) createInfluxDbClient(cfg *probeCfg) (*influxdb.Client, error) {
 		},
 	}
 
-	config := influxdb.NewConfig()
+	influxConfig := influxdb.NewConfig()
 	u, _ := url.Parse("http://probe-service")
-	config.URL = *u
-	config.Username = cfg.dbUser
-	config.Password = cfg.dbPassword
-	clt, _ := influxdb.NewClient(config)
+	influxConfig.URL = *u
+	influxConfig.Username = cfg.dbUser
+	influxConfig.Password = cfg.dbPassword
+	clt, _ := influxdb.NewClient(influxConfig)
 
 	ic := reflect.ValueOf(clt)
 	ict := ic.Type()

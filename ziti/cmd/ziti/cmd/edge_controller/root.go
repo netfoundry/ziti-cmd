@@ -17,6 +17,7 @@
 package edge_controller
 
 import (
+	"github.com/openziti/ziti/common/enrollment"
 	"io"
 
 	"github.com/Jeffail/gabs"
@@ -37,7 +38,13 @@ func NewCmdEdge(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 // commonOptions are common options for edge controller commands
 type commonOptions struct {
 	common.CommonOptions
+	OutputJSONRequest  bool
 	OutputJSONResponse bool
+}
+
+func (options *commonOptions) AddCommonFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
+	cmd.Flags().BoolVar(&options.OutputJSONRequest, "output-request-json", false, "Output the full JSON request to the Ziti Edge Controller")
 }
 
 // newCmdEdgeController creates a command object for the "edge controller" command
@@ -57,7 +64,8 @@ func populateEdgeCommands(f cmdutil.Factory, out io.Writer, errOut io.Writer, cm
 	cmd.AddCommand(newVersionCmd(f, out, errOut))
 	cmd.AddCommand(newPolicyAdivsorCmd(f, out, errOut))
 	cmd.AddCommand(newVerifyCmd(f, out, errOut))
-	cmd.AddCommand(newSnapshotDbCmd(f, out, errOut))
+	cmd.AddCommand(newDbCmd(f, out, errOut))
+	cmd.AddCommand(enrollment.NewEnrollCommand())
 	return cmd
 }
 

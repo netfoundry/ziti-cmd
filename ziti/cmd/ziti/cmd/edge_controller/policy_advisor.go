@@ -72,7 +72,7 @@ func newPolicyAdvisorIdentitiesCmd(f cmdutil.Factory, out io.Writer, errOut io.W
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
+	options.AddCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.quiet, "quiet", "q", false, "Minimize output by hiding header")
 
 	return cmd
@@ -101,8 +101,8 @@ func newPolicyAdvisorServicesCmd(f cmdutil.Factory, out io.Writer, errOut io.Wri
 
 	// allow interspersing positional args and flags
 	cmd.Flags().SetInterspersed(true)
-	cmd.Flags().BoolVarP(&options.OutputJSONResponse, "output-json", "j", false, "Output the full JSON response from the Ziti Edge Controller")
 	cmd.Flags().BoolVarP(&options.quiet, "quiet", "q", false, "Minimize output by hiding header")
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -304,13 +304,13 @@ func runPolicyAdvisorForService(serviceId string, o *policyAdvisorOptions) error
 		filter = fmt.Sprintf(`true skip %v limit 2`, skip)
 		children, _, err := filterSubEntitiesOfType("services", "identities", serviceId, filter, &o.commonOptions)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, child := range children {
 			identityId, _ := child.S("id").Data().(string)
 			if err := runPolicyAdvisorForIdentityAndService(identityId, serviceId, o); err != nil {
-				panic(err)
+				return err
 			}
 		}
 		skip += len(children)
