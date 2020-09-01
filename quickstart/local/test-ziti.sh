@@ -4,11 +4,13 @@ ziti edge controller delete service netcatsvc
 ziti edge controller delete service zcatsvc
 ziti edge controller delete service httpbinsvc
 ziti edge controller delete service iperfsvc
+ziti edge controller delete service demo-weather-service
 
 ziti edge controller delete config netcatconfig
 ziti edge controller delete config zcatconfig
 ziti edge controller delete config httpbinsvcconfig
 ziti edge controller delete config iperfsvcconfig
+ziti edge controller delete config demo-weather-config
 
 ziti edge controller create config httpbinsvcconfig ziti-tunneler-client.v1 '{ "hostname" : "httpbin.ziti", "port" : 8000 }'
 ziti edge controller create service httpbinsvc --configs httpbinsvcconfig
@@ -25,6 +27,10 @@ ziti edge controller create terminator zcatsvc "${ZITI_EDGE_ROUTER_NAME}" tcp:lo
 ziti edge controller create config iperfsvcconfig ziti-tunneler-client.v1 '{ "hostname" : "iperf3.ziti", "port" : 15000 }'
 ziti edge controller create service iperfsvc --configs iperfsvcconfig 
 ziti edge controller create terminator iperfsvc "${ZITI_EDGE_ROUTER_NAME}" tcp:localhost:5201
+
+ziti edge controller create config demo-weather-config ziti-tunneler-client.v1 '{ "hostname" : "ziti.wttr.in", "port" : 80 }'
+ziti edge controller create service demo-weather-service --configs demo-weather-config
+ziti edge controller create terminator demo-weather-service "${ZITI_EDGE_ROUTER_NAME}" tcp:wttr.in:80
 
 ziti edge controller delete identity "test_identity"
 ziti edge controller create identity device "test_identity" -o "${ZITI_HOME}/test_identity".jwt
