@@ -57,15 +57,13 @@ echo "installation it expects them all to be at localhost/127.0.0.1. Please make
 echo "entries are in your hosts file before continuing:"
 echo "  - ${ZITI_CONTROLLER_HOSTNAME}"
 echo "  - ${ZITI_EDGE_HOSTNAME}"
-echo "  - ${ZITI_ZAC_HOSTNAME}"
 echo "  - ${ZITI_EDGE_ROUTER_HOSTNAME}"
-echo "  - ${ZITI_EDGE_WSS_ROUTER_HOSTNAME}"
 echo "  - ${ZITI_ROUTER_BR_HOSTNAME}"
 echo "  - ${ZITI_ROUTER_BLUE_HOSTNAME}"
 echo "  - ${ZITI_ROUTER_RED_HOSTNAME}"
 echo ""
 echo "   example:"
-echo "   127.0.0.1 ${ZITI_CONTROLLER_HOSTNAME} ${ZITI_EDGE_HOSTNAME} ${ZITI_ZAC_HOSTNAME} ${ZITI_EDGE_ROUTER_HOSTNAME} ${ZITI_EDGE_WSS_ROUTER_HOSTNAME} ${ZITI_ROUTER_BR_HOSTNAME} ${ZITI_ROUTER_BLUE_HOSTNAME} ${ZITI_ROUTER_RED_HOSTNAME}"
+echo "   127.0.0.1 ${ZITI_CONTROLLER_HOSTNAME} ${ZITI_EDGE_HOSTNAME} ${ZITI_EDGE_ROUTER_HOSTNAME} ${ZITI_ROUTER_BR_HOSTNAME} ${ZITI_ROUTER_BLUE_HOSTNAME} ${ZITI_ROUTER_RED_HOSTNAME}"
 echo ""
 
 while true; do
@@ -108,7 +106,7 @@ do
 done
 
 echo "staring a new bash shell to retain all environment variables without polluting the initial shell"
-bash --rcfile <(cat << HERE
+bash_rc=$(cat << HERE
 . ~/.bashrc
 . ~/.bash_aliases
 export PS1="ZITI IS RUNNING ${network_name}: "
@@ -125,3 +123,4 @@ echo "generating env file"
 echo "sourced environment file at . ${ZITI_HOME}/env"
 HERE
 )
+bash --rcfile <(echo $bash_rc)

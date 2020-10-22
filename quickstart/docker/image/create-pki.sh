@@ -3,16 +3,13 @@ function pki_client_server {
     name_local=$1
     ZITI_CA_NAME_local=$2
 
-    echo "==============================================================="
-    echo "=== creating certs for ${name_local}                           "
-    echo "==============================================================="
-    echo "creating server certificate for ${name_local} using CA: ${ZITI_CA_NAME_local}"
+    echo "Creating server and client certs from ca: ${ZITI_CA_NAME_local} for ${name_local}"
+
     ziti pki create server --pki-root="${ZITI_PKI}" --ca-name "${ZITI_CA_NAME_local}" \
     --server-file "${name_local}-server" \
     --dns "${name_local}" --ip 127.0.0.1 \
     --server-name "${name_local} server certificate"
 
-    echo "creating client certificate for ${name_local} using CA: ${ZITI_CA_NAME_local}"
     ziti pki create client --pki-root="${ZITI_PKI}" --ca-name "${ZITI_CA_NAME_local}" \
     --client-file "${name_local}-client" \
     --key-file "${name_local}-server" \
@@ -21,9 +18,6 @@ function pki_client_server {
     echo ""
 }
 
-echo "==============================================================="
-echo "=== creating controller CA chain                            ==="
-echo "==============================================================="
 echo "Creating CONTROLLER CA: ${ZITI_CONTROLLER_ROOTCA_NAME}"
 ziti pki create ca --pki-root="${ZITI_PKI}" --ca-file="${ZITI_CONTROLLER_ROOTCA_NAME}" --ca-name="${ZITI_CONTROLLER_ROOTCA_NAME} Root CA"
 echo "--- DONE"
@@ -89,3 +83,29 @@ ziti pki create intermediate --pki-root "${ZITI_PKI}" --ca-name "${ZITI_SIGNING_
     --intermediate-file "${ZITI_SIGNING_INTERMEDIATE_NAME}" --max-path-len 1
 echo "--- DONE"
 echo ""
+
+echo "Creating ziti-fabric client certificate"
+ziti pki create client --pki-root="${ZITI_PKI}" --ca-name="${ZITI_CONTROLLER_INTERMEDIATE_NAME}" \
+--client-file="${ZITI_NETWORK}-dotzeet" \
+--client-name "${ZITI_NETWORK} Management"
+echo "--- DONE"
+echo ""
+
+pki_client_server "${ZITI_EDGE_HOSTNAME}" "${ZITI_EDGE_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_ZAC_HOSTNAME}" "${ZITI_EDGE_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_EDGE_WSS_ROUTER_NAME}" "${ZITI_EDGE_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_CONTROLLER_HOSTNAME}" "${ZITI_CONTROLLER_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_ROUTER_BR_HOSTNAME}" "${ZITI_CONTROLLER_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_ROUTER_BLUE_HOSTNAME}" "${ZITI_CONTROLLER_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_ROUTER_RED_HOSTNAME}" "${ZITI_CONTROLLER_INTERMEDIATE_NAME}"
+pki_client_server "${ZITI_EDGE_ROUTER_HOSTNAME}" "${ZITI_EDGE_INTERMEDIATE_NAME}"
+
+
+
+
+
+
+
+
+
+

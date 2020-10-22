@@ -8,3 +8,5 @@ ziti edge controller create identity device "${idname}" -o "${ZITI_HOME}/${idnam
 
 cp "${ZITI_HOME}/${idname}.jwt" /mnt/v/temp/ziti-windows-tunneler/${idname}.jwt
 echo "jwt written to: /mnt/v/temp/ziti-windows-tunneler/${idname}.jwt"
+export NEW_ID_FILE="/mnt/v/temp/ziti-windows-tunneler/${idname}.jwt"
+echo "              : $(wslpath -w "/mnt/v/temp/ziti-windows-tunneler/${idname}.jwt")"

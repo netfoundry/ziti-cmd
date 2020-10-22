@@ -1,45 +1,23 @@
+CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 ziti edge controller login "${ZITI_EDGE_API_HOSTNAME}" -u "${ZITI_USER}" -p "${ZITI_PWD}" -c "${ZITI_PKI}/${ZITI_EDGE_ROOTCA_NAME}/certs/${ZITI_EDGE_INTERMEDIATE_NAME}.cert"
 
-ziti edge controller delete service netcatsvc
-ziti edge controller delete service zcatsvc
-ziti edge controller delete service httpbinsvc
-ziti edge controller delete service iperfsvc
-ziti edge controller delete service demo-weather-service
+svc=clint-ssh-hosted-dns ihost=clint.ssh.hosted iport=22 sproto=tcp shost=wsl2-controller sport=2200 $CURDIR/make-service.sh
+svc=clint-ssh-hosted-ip ihost=192.168.15.3 iport=22 sproto=tcp shost=wsl2-controller sport=2200 $CURDIR/make-service.sh
 
-ziti edge controller delete config netcatconfig
-ziti edge controller delete config zcatconfig
-ziti edge controller delete config httpbinsvcconfig
-ziti edge controller delete config iperfsvcconfig
-ziti edge controller delete config demo-weather-config
+svc=clint-ssh-router-dns ihost=clint.ssh.router iport=22 to=tcp:localhost:2200 $CURDIR/make-service.sh
+svc=clint-ssh-router-ip ihost=192.168.15.4 iport=22 to=tcp:localhost:2200 $CURDIR/make-service.sh
 
-ziti edge controller create config httpbinsvcconfig ziti-tunneler-client.v1 '{ "hostname" : "httpbin.ziti", "port" : 8000 }'
-ziti edge controller create service httpbinsvc --configs httpbinsvcconfig
-ziti edge controller create terminator httpbinsvc "${ZITI_EDGE_ROUTER_NAME}" tcp:localhost:80
-
-ziti edge controller create config netcatconfig ziti-tunneler-client.v1 '{ "hostname" : "localhost", "port" : 7256 }'
-ziti edge controller create service netcatsvc --configs netcatconfig
-ziti edge controller create terminator netcatsvc "${ZITI_EDGE_ROUTER_NAME}" tcp:localhost:7256
-
-ziti edge controller create config zcatconfig ziti-tunneler-client.v1 '{ "hostname" : "zcat.ziti", "port" : 7256 }'
-ziti edge controller create service zcatsvc --configs zcatconfig
-ziti edge controller create terminator zcatsvc "${ZITI_EDGE_ROUTER_NAME}" tcp:localhost:7256
-
-ziti edge controller create config iperfsvcconfig ziti-tunneler-client.v1 '{ "hostname" : "iperf3.ziti", "port" : 15000 }'
-ziti edge controller create service iperfsvc --configs iperfsvcconfig 
-ziti edge controller create terminator iperfsvc "${ZITI_EDGE_ROUTER_NAME}" tcp:localhost:5201
-
-ziti edge controller create config demo-weather-config ziti-tunneler-client.v1 '{ "hostname" : "ziti.wttr.in", "port" : 80 }'
-ziti edge controller create service demo-weather-service --configs demo-weather-config
-ziti edge controller create terminator demo-weather-service "${ZITI_EDGE_ROUTER_NAME}" tcp:wttr.in:80
-
-ziti edge controller delete identity "test_identity"
-ziti edge controller create identity device "test_identity" -o "${ZITI_HOME}/test_identity".jwt
 
 ziti edge controller delete service-policy dial-all
 ziti edge controller create service-policy dial-all Dial --service-roles '#all' --identity-roles '#all'
 
+ziti edge controller delete service-policy bind-all
+ziti edge controller create service-policy bind-all Bind --service-roles '#all' --identity-roles '#all'
 #ziti-enroller --jwt "${ZITI_HOME}/test_identity.jwt" -o "${ZITI_HOME}/test_identity".json
 
 #ziti-tunnel proxy netcatsvc:8145 -i "${ZITI_HOME}/test_identity".json > "${ZITI_HOME}/ziti-test_identity.log" 2>&1 &
 cp "${ZITI_HOME}/test_identity.jwt" /mnt/v/temp/identities/_new_id.jwt
+
+
 
