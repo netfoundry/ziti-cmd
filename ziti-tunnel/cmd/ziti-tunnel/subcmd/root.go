@@ -17,6 +17,12 @@
 package subcmd
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"sync"
+	"time"
+
 	"github.com/michaelquigley/pfxlog"
 	"github.com/openziti/edge/tunnel/dns"
 	"github.com/openziti/edge/tunnel/entities"
@@ -26,9 +32,6 @@ import (
 	"github.com/openziti/ziti/common/enrollment"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 const (
@@ -40,6 +43,7 @@ const (
 func init() {
 	root.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose mode")
 	root.PersistentFlags().StringP("identity", "i", "", "Path to JSON file that contains an enrolled identity")
+	root.PersistentFlags().StringP("identityDir", "", "", "Path to directory of JSON files that each contain an enrolled identity")
 	root.PersistentFlags().Uint(svcPollRateFlag, 15, "Set poll rate for service updates (seconds)")
 	root.PersistentFlags().StringP(resolverCfgFlag, "r", "udp://127.0.0.1:53", "Resolver configuration")
 	root.PersistentFlags().StringVar(&logFormatter, "log-formatter", "", "Specify log formatter [json|pfxlog|text]")
@@ -86,28 +90,66 @@ func rootPreRun(cmd *cobra.Command, _ []string) {
 	}
 }
 
+func getIdFiles(cmd *cobra.Command) []string {
+	log := pfxlog.Logger()
+
+	var idFiles []string
+	idDir := cmd.Flag("identityDir").Value.String()
+	if idDir != "" {
+		files, err := ioutil.ReadDir(idDir)
+		if err != nil {
+			log.Fatalf("failed to scan directory %s: %v", idDir, err)
+		}
+
+		for _, file := range files {
+			if filepath.Ext(file.Name()) == ".json" {
+				fn, err := filepath.Abs(filepath.Join(idDir, file.Name()))
+				if err != nil {
+					log.Fatalf("failed to listing file %s: %v", file.Name(), err)
+				}
+				idFiles = append(idFiles, fn)
+			}
+		}
+	}
+
+	identityJson := cmd.Flag("identity").Value.String()
+	if identityJson != "" {
+		idFiles = append(idFiles, identityJson)
+	}
+	return idFiles
+}
 func rootPostRun(cmd *cobra.Command, _ []string) {
 	log := pfxlog.Logger()
 
-	identityJson := cmd.Flag("identity").Value.String()
-	zitiCfg, err := config.NewFromFile(identityJson)
-	if err != nil {
-		log.Fatalf("failed to load ziti configuration from %s: %v", identityJson, err)
+	idFiles := getIdFiles(cmd)
+	if len(idFiles) == 0 {
+		log.Fatalf("no identityJson files found")
 	}
-	zitiCfg.ConfigTypes = []string{
-		entities.ClientConfigV1,
-		entities.ServerConfigV1,
-	}
-	rootPrivateContext := ziti.NewContextWithConfig(zitiCfg)
 
 	svcPollRate, _ := cmd.Flags().GetUint(svcPollRateFlag)
 	resolverConfig := cmd.Flag("resolver").Value.String()
 	resolver = dns.NewResolver(resolverConfig)
 	dnsIpRange, _ := cmd.Flags().GetString(dnsSvcIpRangeFlag)
-	err = intercept.SetDnsInterceptIpRange(dnsIpRange)
+	err := intercept.SetDnsInterceptIpRange(dnsIpRange)
 	if err != nil {
 		log.Fatalf("invalid dns service IP range %s: %v", dnsIpRange, err)
 	}
 
-	intercept.ServicePoller(rootPrivateContext, interceptor, resolver, time.Duration(svcPollRate)*time.Second)
+	var wg sync.WaitGroup
+	for _, f := range idFiles {
+		cfg, err := config.NewFromFile(f)
+		if err != nil {
+			log.Fatalf("failed to load ziti configuration from %s: %v", f, err)
+		}
+
+		cfg.ConfigTypes = []string{
+			entities.ClientConfigV1,
+			entities.ServerConfigV1,
+		}
+		ztx := ziti.NewContextWithConfig(cfg)
+
+		wg.Add(1)
+		go intercept.ServicePoller(ztx, interceptor, resolver, time.Duration(svcPollRate)*time.Second)
+	}
+	wg.Wait()
 }
