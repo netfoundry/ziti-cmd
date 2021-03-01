@@ -21,8 +21,10 @@ import (
 	"github.com/openziti/edge/tunnel/dns"
 	"github.com/openziti/edge/tunnel/entities"
 	"github.com/openziti/edge/tunnel/intercept"
+	"github.com/openziti/foundation/agent"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/openziti/sdk-golang/ziti/config"
+	"github.com/openziti/sdk-golang/ziti/edge"
 	"github.com/openziti/ziti/common/enrollment"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -44,6 +46,8 @@ func init() {
 	root.PersistentFlags().StringP(resolverCfgFlag, "r", "udp://127.0.0.1:53", "Resolver configuration")
 	root.PersistentFlags().StringVar(&logFormatter, "log-formatter", "", "Specify log formatter [json|pfxlog|text]")
 	root.PersistentFlags().StringP(dnsSvcIpRangeFlag, "d", "100.64.0.1/10", "cidr to use when assigning IPs to unresolvable intercept hostnames")
+	root.PersistentFlags().BoolVar(&cliAgentEnabled, "cli-agent", true, "Enable/disable CLI Agent (enabled by default)")
+	root.PersistentFlags().StringVar(&cliAgentAddr, "cli-agent-addr", "", "Specify where CLI Agent should list (ex: unix:/tmp/myfile.sock or tcp:127.0.0.1:10001)")
 
 	root.AddCommand(enrollment.NewEnrollCommand())
 }
@@ -57,6 +61,8 @@ var root = &cobra.Command{
 var interceptor intercept.Interceptor
 var resolver dns.Resolver
 var logFormatter string
+var cliAgentEnabled bool
+var cliAgentAddr string
 
 func Execute() {
 	if err := root.Execute(); err != nil {
@@ -78,7 +84,7 @@ func rootPreRun(cmd *cobra.Command, _ []string) {
 	case "pfxlog":
 		logrus.SetFormatter(pfxlog.NewFormatterStartingToday())
 	case "json":
-		logrus.SetFormatter(&logrus.JSONFormatter{})
+		logrus.SetFormatter(&logrus.JSONFormatter{TimestampFormat: "2006-01-02T15:04:05.000Z"})
 	case "text":
 		logrus.SetFormatter(&logrus.TextFormatter{})
 	default:
@@ -86,8 +92,22 @@ func rootPreRun(cmd *cobra.Command, _ []string) {
 	}
 }
 
+type serviceChangeEvent struct {
+	eventType config.ServiceEventType
+	service   *edge.Service
+}
+
 func rootPostRun(cmd *cobra.Command, _ []string) {
 	log := pfxlog.Logger()
+
+	if cliAgentEnabled {
+		// don't use the agent's shutdown handler. it calls os.Exit on SIGINT
+		// which interferes with the servicePoller shutdown
+		cleanup := false
+		if err := agent.Listen(agent.Options{Addr: cliAgentAddr, ShutdownCleanup: &cleanup}); err != nil {
+			pfxlog.Logger().WithError(err).Error("unable to start CLI agent")
+		}
+	}
 
 	identityJson := cmd.Flag("identity").Value.String()
 	zitiCfg, err := config.NewFromFile(identityJson)
@@ -98,16 +118,43 @@ func rootPostRun(cmd *cobra.Command, _ []string) {
 		entities.ClientConfigV1,
 		entities.ServerConfigV1,
 	}
-	rootPrivateContext := ziti.NewContextWithConfig(zitiCfg)
+
+	var serviceListener *intercept.ServiceListener
+	var serviceEventsC = make(chan *serviceChangeEvent)
 
 	svcPollRate, _ := cmd.Flags().GetUint(svcPollRateFlag)
+	options := &config.Options{
+		RefreshInterval: time.Duration(svcPollRate) * time.Second,
+		OnServiceUpdate: func(eventType config.ServiceEventType, service *edge.Service) {
+			serviceEventsC <- &serviceChangeEvent{
+				eventType: eventType,
+				service:   service,
+			}
+		},
+	}
+
+	rootPrivateContext := ziti.NewContextWithOpts(zitiCfg, options)
+
 	resolverConfig := cmd.Flag("resolver").Value.String()
 	resolver = dns.NewResolver(resolverConfig)
 	dnsIpRange, _ := cmd.Flags().GetString(dnsSvcIpRangeFlag)
-	err = intercept.SetDnsInterceptIpRange(dnsIpRange)
-	if err != nil {
+	if err = intercept.SetDnsInterceptIpRange(dnsIpRange); err != nil {
 		log.Fatalf("invalid dns service IP range %s: %v", dnsIpRange, err)
 	}
 
-	intercept.ServicePoller(rootPrivateContext, interceptor, resolver, time.Duration(svcPollRate)*time.Second)
+	interceptor.Start(rootPrivateContext)
+	serviceListener = intercept.NewServiceListener(rootPrivateContext, interceptor, resolver)
+
+	go func() {
+		for event := range serviceEventsC {
+			serviceListener.HandleServicesChange(event.eventType, event.service)
+		}
+	}()
+	if err = rootPrivateContext.Authenticate(); err != nil {
+		log.WithError(err).Fatal("failed to authenticate")
+	}
+	serviceListener.WaitForShutdown()
+	if cliAgentEnabled {
+		agent.Close()
+	}
 }
