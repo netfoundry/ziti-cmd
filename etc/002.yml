@@ -28,11 +28,15 @@ link:
 
 transport:
   westworld3:
-    profile_version:              1
-    #tx_portal_min_sz:             16384
-    #tx_portal_max_sz:             1073741824
-    #instrument:
-    #  name:                       metrics
-    #  path:                       /tmp/westworld3
-    #  snapshot_ms:                250
-    #  enabled:                    true
+    metrics:
+      profile_version:              1
+      tx_portal_min_sz:             16384
+      tx_portal_max_sz:             1073741824
+      instrument:
+        name:                       metrics
+        path:                       /tmp/westworld3
+        snapshot_ms:                250
+        enabled:                    true
+    mapping:
+      001:                          metrics
+      003:                          default
