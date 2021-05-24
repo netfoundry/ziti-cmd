@@ -71,6 +71,8 @@ ctrl:
 link:
   dialers:
     - binding:          transport
+      # use split payload/ack channels?
+      #split:            false
 
 listeners:
   # basic ssh proxy
