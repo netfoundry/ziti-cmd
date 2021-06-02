@@ -72,7 +72,9 @@ link:
   dialers:
     - binding:          transport
       # use split payload/ack channels?
-      #split:            false
+      split:            false
+      options:
+        txPortalStartSize: 524288
 
 listeners:
   # basic ssh proxy
@@ -80,7 +82,7 @@ listeners:
     address:            tcp:0.0.0.0:1122
     service:            ssh
     options:
-      retransmission:   true
+      txPortalStartSize: 524288
 
   # for iperf_tcp (iperf3)
   - binding:            proxy

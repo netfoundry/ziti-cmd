@@ -23,8 +23,6 @@ link:
         outQueueSize:   16
   dialers:
     - binding:          transport
-      options:
-        outQueueSize:   32
 
 transport:
   westworld3:
@@ -40,3 +38,8 @@ transport:
     mapping:
       001:                          metrics
       003:                          default
+
+dialers:
+  - binding:            transport
+    options:
+      txPortalStartSize:       524288

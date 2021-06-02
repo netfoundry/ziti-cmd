@@ -30,7 +30,9 @@ link:
   dialers:
     - binding:          transport
       # use split payload/ack channels?
-      #split:            false
+      split:            false
+      options:
+        txPortalStartSize: 524288
 
 dialers:
   - binding:            transport
