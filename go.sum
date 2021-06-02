@@ -612,10 +612,10 @@ github.com/openzipkin/zipkin-go v0.1.1/go.mod h1:NtoC/o8u3JlF1lSlyPNswIbeQH9bJTm
 github.com/openzipkin/zipkin-go v0.1.6/go.mod h1:QgAqvLzwWbR/WpD4A3cGpPtJrZXNIiJc5AZX7/PBEpw=
 github.com/openziti/bbolt v1.3.6-0.20210317142109-547da822475e h1:ST9+54UtCr96S5+Wa7LQtpGS6/xK7Z+KQXvOAtYgJlA=
 github.com/openziti/bbolt v1.3.6-0.20210317142109-547da822475e/go.mod h1:G5EMThwa9y8QZGBClrRx5EY+Yw9kAhnjy3bSjsnlVTQ=
-github.com/openziti/edge v0.19.113 h1:1oHcIFsB8YGUGb6baXNL+C6rdpgvlBkbaAhEHmgwtTk=
-github.com/openziti/edge v0.19.113/go.mod h1:9LJisB1t2/YPlQzAX7wb/iF0RmVmJ1Tj244dUtZc0ak=
-github.com/openziti/sdk-golang v0.15.49 h1:ZlpufEJzE8XUi6hAHKx0+WxWD8aBgcsocmlrnmNZXJs=
-github.com/openziti/sdk-golang v0.15.49/go.mod h1:/8xH6hV9g8bsJNfM6FYhPC6SU4qKs2UGXh3CsQ5sIu4=
+github.com/openziti/edge v0.19.119 h1:6V5VvmLwnQEJscWiFDJepy0gQoIljog1YtXCQz/ZVAs=
+github.com/openziti/edge v0.19.119/go.mod h1:VauIJouDVmKMxfcvvbnzN2XnjvRgWUQbSLOT5MDF8TU=
+github.com/openziti/sdk-golang v0.15.50 h1:BeKlp17UpQHGFDUvXn/Yn+q9r/wxSdhCs0TubQOp4Es=
+github.com/openziti/sdk-golang v0.15.50/go.mod h1:nA/ik6YZPTcLNdiq5tKjIPjjLCTtOEsfFYVl8NpAF2Q=
 github.com/oracle/oci-go-sdk v24.2.0+incompatible/go.mod h1:VQb79nF8Z2cwLkLS35ukwStZIg5F66tcBccjip/j888=
 github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6/go.mod h1:Lu3tH6HLW3feq74c2GC+jIMS/K2CFcDWnWD9XkenwhI=
 github.com/orcaman/concurrent-map v0.0.0-20210106121528-16402b402231 h1:fa50YL1pzKW+1SsBnJDOHppJN9stOEwS+CRWyUtyYGU=
