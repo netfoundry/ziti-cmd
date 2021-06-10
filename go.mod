@@ -6,7 +6,7 @@ go 1.16
 
 replace github.com/openziti/dilithium => ../dilithium
 
-//replace github.com/openziti/fabric => ../fabric
+replace github.com/openziti/fabric => ../fabric
 
 //replace github.com/openziti/sdk-golang => ../sdk-golang
 
@@ -31,7 +31,7 @@ require (
 	github.com/michaelquigley/pfxlog v0.3.7
 	github.com/openziti/edge v0.19.128
 	github.com/openziti/fabric v0.16.65
-	github.com/openziti/foundation v0.15.53
+	github.com/openziti/foundation v0.15.54
 	github.com/openziti/sdk-golang v0.15.51
 	github.com/pborman/uuid v1.2.0
 	github.com/pkg/errors v0.9.1
