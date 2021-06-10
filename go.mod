@@ -4,7 +4,7 @@ go 1.16
 
 //replace github.com/openziti/foundation => ../foundation
 
-//replace github.com/openziti/dilithium => ../dilithium
+replace github.com/openziti/dilithium => ../dilithium
 
 //replace github.com/openziti/fabric => ../fabric
 
