@@ -31,7 +31,7 @@ require (
 	github.com/michaelquigley/pfxlog v0.3.7
 	github.com/openziti/edge v0.19.133
 	github.com/openziti/fabric v0.16.68
-	github.com/openziti/foundation v0.15.55
+	github.com/openziti/foundation v0.15.56
 	github.com/openziti/sdk-golang v0.15.53
 	github.com/pborman/uuid v1.2.0
 	github.com/pkg/errors v0.9.1
